@@ -1,0 +1,21 @@
+{
+  "name": "dorms-html-making-class",
+  "version": "1.0.0",
+  "description": "학생이 직접 만든 결과물을 AI 튜터와 함께 반응형 HTML 웹페이지로 완성하는 수업용 웹앱. 기본 템플릿은 수학이지만 system-prompt.txt만 바꾸면 어떤 교과든 맞게 튜닝할 수 있다.",
+  "main": "server.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

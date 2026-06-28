@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# secrets / local config
+.env
+
+# database (auto-created on first run)
+*.db
+*.db-shm
+*.db-wal
+
+# student uploads (contents ignored; keep the empty dir tracked)
+uploads/*
+!uploads/.gitkeep
+
+# runtime logs
+*.log
+
+# editor / OS
+.DS_Store
+
+# local tooling / editor state
+.omc/
+.claude/
+*.backup-*

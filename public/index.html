@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수학 풀이 웹 디자이너 - 로그인</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .login-card h1 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .login-card p.subtitle {
+      color: #888;
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: #667eea;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error {
+      background: #fee;
+      color: #c00;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error.show { display: block; }
+    .toggle-link {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.85rem;
+    }
+    .toggle-link a {
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    #setPasswordView, #adminLoginView { display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>수학 풀이 웹 디자이너</h1>
+    <p class="subtitle">학번으로 로그인하세요</p>
+    <div id="errorBox" class="error"></div>
+
+    <!-- Student Login -->
+    <div id="studentLoginView">
+      <div class="form-group">
+        <label>학번 (예: 1317)</label>
+        <input type="text" id="studentIdInput" placeholder="4자리 학번 입력" maxlength="20" autofocus autocomplete="off">
+      </div>
+      <div class="form-group" id="passwordGroup" style="display:none;">
+        <label>비밀번호</label>
+        <input type="password" id="passwordInput" placeholder="비밀번호 입력" autocomplete="off">
+      </div>
+      <button class="btn" id="loginBtn" onclick="handleLogin()">로그인</button>
+      <div class="toggle-link">
+        <a onclick="showAdminLogin()">관리자 로그인</a>
+      </div>
+    </div>
+
+    <!-- Set Password (first login) -->
+    <div id="setPasswordView">
+      <p class="subtitle" id="setPasswordMsg">처음 로그인이시군요! 비밀번호를 설정해주세요.</p>
+      <div class="form-group">
+        <label>새 비밀번호 (4자 이상)</label>
+        <input type="password" id="newPasswordInput" placeholder="비밀번호 입력">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인</label>
+        <input type="password" id="confirmPasswordInput" placeholder="비밀번호 다시 입력">
+      </div>
+      <button class="btn" onclick="handleSetPassword()">비밀번호 설정 및 로그인</button>
+      <div class="toggle-link">
+        <a onclick="showStudentLogin()">뒤로</a>
+      </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="adminLoginView">
+      <div class="form-group">
+        <label>관리자 아이디</label>
+        <input type="text" id="adminIdInput" placeholder="아이디 입력" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="adminPwInput" placeholder="비밀번호 입력" autocomplete="off">
+      </div>
+      <button class="btn" onclick="handleAdminLogin()">관리자 로그인</button>
+      <div class="toggle-link">
+        <a onclick="showStudentLogin()">학생 로그인</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pendingStudentId = '';
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg;
+      box.classList.add('show');
+    }
+    function hideError() {
+      document.getElementById('errorBox').classList.remove('show');
+    }
+
+    function showStudentLogin() {
+      hideError();
+      document.getElementById('studentLoginView').style.display = 'block';
+      document.getElementById('setPasswordView').style.display = 'none';
+      document.getElementById('adminLoginView').style.display = 'none';
+      document.querySelector('.subtitle').textContent = '학번으로 로그인하세요';
+    }
+    function showAdminLogin() {
+      hideError();
+      document.getElementById('studentLoginView').style.display = 'none';
+      document.getElementById('setPasswordView').style.display = 'none';
+      document.getElementById('adminLoginView').style.display = 'block';
+      document.querySelector('.subtitle').textContent = '관리자 로그인';
+    }
+
+    // Check if already logged in
+    fetch('/api/me').then(r => r.json()).then(data => {
+      if (data.role === 'admin') window.location.href = '/admin.html';
+      else if (data.studentId) window.location.href = '/chat.html';
+    }).catch(() => {});
+
+    async function handleLogin() {
+      hideError();
+      const studentId = document.getElementById('studentIdInput').value.trim();
+      if (!studentId) return showError('학번을 입력해주세요.');
+
+      const pwGroup = document.getElementById('passwordGroup');
+      const pwInput = document.getElementById('passwordInput');
+
+      // If password field is not visible, first check if user needs password
+      if (pwGroup.style.display === 'none') {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, password: '' })
+        });
+        const data = await res.json();
+
+        if (data.needsPassword) {
+          pendingStudentId = studentId;
+          document.getElementById('studentLoginView').style.display = 'none';
+          document.getElementById('setPasswordView').style.display = 'block';
+          document.getElementById('setPasswordMsg').textContent =
+            `${studentId}번 학생, 처음 로그인이시군요! 비밀번호를 설정해주세요.`;
+          return;
+        }
+        if (data.error && !data.needsPassword) {
+          // Has password, show password field
+          if (res.status === 401) {
+            pwGroup.style.display = 'block';
+            pwInput.focus();
+            return;
+          }
+          return showError(data.error);
+        }
+        if (data.success) {
+          window.location.href = data.role === 'admin' ? '/admin.html' : '/chat.html';
+        }
+      } else {
+        // Password field is visible, login with password
+        const password = pwInput.value;
+        if (!password) return showError('비밀번호를 입력해주세요.');
+
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, password })
+        });
+        const data = await res.json();
+        if (data.error) return showError(data.error);
+        if (data.success) {
+          window.location.href = data.role === 'admin' ? '/admin.html' : '/chat.html';
+        }
+      }
+    }
+
+    async function handleSetPassword() {
+      hideError();
+      const pw = document.getElementById('newPasswordInput').value;
+      const confirm = document.getElementById('confirmPasswordInput').value;
+      if (pw.length < 4) return showError('비밀번호는 4자 이상이어야 합니다.');
+      if (pw !== confirm) return showError('비밀번호가 일치하지 않습니다.');
+
+      const res = await fetch('/api/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId: pendingStudentId, password: pw })
+      });
+      const data = await res.json();
+      if (data.error) return showError(data.error);
+      if (data.success) {
+        window.location.href = '/chat.html';
+      }
+    }
+
+    async function handleAdminLogin() {
+      hideError();
+      const id = document.getElementById('adminIdInput').value.trim();
+      const pw = document.getElementById('adminPwInput').value;
+      if (!id || !pw) return showError('아이디와 비밀번호를 입력해주세요.');
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId: id, password: pw })
+      });
+      const data = await res.json();
+      if (data.error) return showError(data.error);
+      if (data.success) {
+        window.location.href = data.role === 'admin' ? '/admin.html' : '/chat.html';
+      }
+    }
+
+    // Enter key handlers
+    document.getElementById('studentIdInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('passwordInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('confirmPasswordInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSetPassword();
+    });
+    document.getElementById('adminPwInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleAdminLogin();
+    });
+  </script>
+</body>
+</html>

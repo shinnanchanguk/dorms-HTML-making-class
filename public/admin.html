@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 대시보드</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f5f5f7; }
+
+    .header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .header h1 { font-size: 1.2rem; }
+    .header-btns { display: flex; gap: 8px; }
+    .header-btn {
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+    }
+    .header-btn:hover { background: rgba(255,255,255,0.3); }
+    .header-btn.student-mode { background: #22c55e; }
+
+    /* Top tabs (main sections) */
+    .tabs {
+      display: flex; background: #fff; border-bottom: 2px solid #e0e0e0;
+      padding: 0 16px; overflow-x: auto;
+    }
+    .tab {
+      padding: 12px 20px; border: none; background: none; cursor: pointer;
+      font-size: 0.9rem; color: #888; border-bottom: 3px solid transparent; white-space: nowrap;
+    }
+    .tab.active { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
+    .tab:hover { color: #667eea; }
+
+    /* Class sub-tabs */
+    .class-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px;
+    }
+    .class-tab {
+      padding: 8px 20px; border: 2px solid #e0e0e0; background: #fff;
+      border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .class-tab:hover { border-color: #667eea; color: #667eea; }
+    .class-tab.active { background: #667eea; color: #fff; border-color: #667eea; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: #fff; border-radius: 12px; padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px;
+    }
+    .card h3 { font-size: 1rem; color: #333; margin-bottom: 12px; }
+    .card h4 { font-size: 0.9rem; color: #667eea; margin-bottom: 10px; margin-top: 16px; }
+    .card h4:first-child { margin-top: 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+    th { color: #888; font-weight: 600; background: #fafafa; }
+    tr:hover { background: #f8f8ff; }
+
+    .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 0.8rem; color: #888; font-weight: 600; }
+    .form-group input, .form-group select {
+      padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.85rem; outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #667eea; }
+
+    .btn {
+      padding: 8px 18px; background: #667eea; color: #fff; border: none;
+      border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-sm { padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; }
+    .btn-danger { background: #ef4444; }
+    .btn-success { background: #22c55e; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+    .badge-blue { background: #eef; color: #667eea; }
+    .badge-green { background: #f0fff4; color: #22c55e; }
+
+    .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+
+    .stat-row {
+      display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .stat-box {
+      background: #f8f8ff; border: 1px solid #e8e8ff; border-radius: 10px;
+      padding: 12px 20px; text-align: center; min-width: 120px;
+    }
+    .stat-box .num { font-size: 1.5rem; font-weight: 700; color: #667eea; }
+    .stat-box .label { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff; border-radius: 12px; padding: 24px; max-width: 700px;
+      width: 90%; max-height: 80vh; overflow-y: auto;
+    }
+    .modal h3 { margin-bottom: 16px; }
+    .modal .close-btn {
+      float: right; background: none; border: none; font-size: 1.5rem;
+      cursor: pointer; color: #888;
+    }
+    .log-message { padding: 8px 12px; margin: 4px 0; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; }
+    .log-message.user { background: #eef; }
+    .log-message.assistant { background: #f0f0f0; }
+    .log-message .role-tag { font-weight: 600; margin-right: 8px; }
+
+    .empty-msg { color: #aaa; text-align: center; padding: 20px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>관리자 대시보드</h1>
+    <div class="header-btns">
+      <button class="header-btn student-mode" onclick="goStudentMode()">학생 모드</button>
+      <button class="header-btn" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('manage', this)">반별 관리</button>
+    <button class="tab" onclick="switchTab('submissions', this)">제출물</button>
+    <button class="tab" onclick="switchTab('logs', this)">대화 로그</button>
+  </div>
+
+  <div class="container">
+
+    <!-- ════ 반별 관리 패널 ════ -->
+    <div class="panel active" id="panel-manage">
+      <div class="class-tabs" id="classTabs"></div>
+      <div id="classContent"></div>
+    </div>
+
+    <!-- ════ 제출물 패널 ════ -->
+    <div class="panel" id="panel-submissions">
+      <div class="class-tabs" id="subClassTabs"></div>
+      <div class="card">
+        <h3>제출물 관리</h3>
+        <table>
+          <thead><tr><th>학번</th><th>반</th><th>단원</th><th>문제</th><th>제출일시</th><th>액션</th></tr></thead>
+          <tbody id="submissionsBody"></tbody>
+        </table>
+        <div class="empty-msg" id="subEmpty" style="display:none;">제출물이 없습니다.</div>
+      </div>
+    </div>
+
+    <!-- ════ 대화 로그 패널 ════ -->
+    <div class="panel" id="panel-logs">
+      <div class="class-tabs" id="logClassTabs"></div>
+      <div class="card">
+        <h3>대화 로그</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>학번 검색</label>
+            <input type="text" id="logStudentId" placeholder="예: 1317">
+          </div>
+          <button class="btn" onclick="loadSessions()">조회</button>
+        </div>
+        <table>
+          <thead><tr><th>세션</th><th>학번</th><th>단원</th><th>문제</th><th>생성일</th><th>상태</th><th>액션</th></tr></thead>
+          <tbody id="sessionsBody"></tbody>
+        </table>
+        <div class="empty-msg" id="logEmpty" style="display:none;">대화 로그가 없습니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Log Modal -->
+  <div class="modal-overlay" id="logModal">
+    <div class="modal">
+      <button class="close-btn" onclick="closeLogModal()">&times;</button>
+      <h3 id="logModalTitle">대화 로그</h3>
+      <div id="logModalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ─────────────────────────────────────────────
+    let allStudents = [];
+    let allLimits = [];
+    let allTimeRestrictions = [];
+    let allSubmissions = [];
+    let selectedClass = 0;
+    let subSelectedClass = null;
+    let logSelectedClass = null;
+
+    // ── Init ──────────────────────────────────────────────
+    async function init() {
+      const res = await fetch('/api/me');
+      if (!res.ok) { window.location.href = '/index.html'; return; }
+      const user = await res.json();
+      if (user.role !== 'admin') { window.location.href = '/chat.html'; return; }
+      await loadAll();
+      buildClassTabs();
+      renderClassPanel();
+    }
+
+    async function loadAll() {
+      const [studentsRes, limitsRes, timeRes, subRes] = await Promise.all([
+        fetch('/api/admin/students'),
+        fetch('/api/admin/session-limits'),
+        fetch('/api/admin/time-restrictions'),
+        fetch('/api/admin/submissions')
+      ]);
+      allStudents = await studentsRes.json();
+      allLimits = await limitsRes.json();
+      allTimeRestrictions = await timeRes.json();
+      allSubmissions = await subRes.json();
+    }
+
+    // ── Tabs ──────────────────────────────────────────────
+    function switchTab(name, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${name}`).classList.add('active');
+      if (name === 'submissions') renderSubmissions();
+      if (name === 'logs') { logSelectedClass = 1; buildLogClassTabs(); loadSessions(); }
+    }
+
+    const CLASS_LIST = [0, 1, 2, 3, 4, 5];
+    const CLASS_LABEL = (c) => c === 0 ? '테스트' : c + '반';
+
+    function buildClassTabs() {
+      // Manage tabs
+      const div = document.getElementById('classTabs');
+      div.innerHTML = '';
+      for (const i of CLASS_LIST) {
+        div.innerHTML += `<button class="class-tab ${i === selectedClass ? 'active' : ''}" onclick="selectClass(${i})">${CLASS_LABEL(i)}</button>`;
+      }
+      // Submissions tabs
+      const subDiv = document.getElementById('subClassTabs');
+      subDiv.innerHTML = `<button class="class-tab ${subSelectedClass === null ? 'active' : ''}" onclick="subSelectClass(null)">전체</button>`;
+      for (const i of CLASS_LIST) {
+        subDiv.innerHTML += `<button class="class-tab ${subSelectedClass === i ? 'active' : ''}" onclick="subSelectClass(${i})">${CLASS_LABEL(i)}</button>`;
+      }
+      // Log tabs
+      buildLogClassTabs();
+    }
+
+    function buildLogClassTabs() {
+      const div = document.getElementById('logClassTabs');
+      if (!div) return;
+      div.innerHTML = '';
+      for (const i of CLASS_LIST) {
+        div.innerHTML += `<button class="class-tab ${logSelectedClass === i ? 'active' : ''}" onclick="logSelectClass(${i})">${CLASS_LABEL(i)}</button>`;
+      }
+    }
+
+    function selectClass(cls) {
+      selectedClass = cls;
+      document.querySelectorAll('#classTabs .class-tab').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderClassPanel();
+    }
+
+    function subSelectClass(cls) {
+      subSelectedClass = cls;
+      document.querySelectorAll('#subClassTabs .class-tab').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderSubmissions();
+    }
+
+    function logSelectClass(cls) {
+      logSelectedClass = cls;
+      document.querySelectorAll('#logClassTabs .class-tab').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('logStudentId').value = '';
+      loadSessions();
+    }
+
+    // ── Class Panel (통합: 학생 + 세션제한 + 시간제한) ────
+    function renderClassPanel() {
+      const cls = selectedClass;
+      const students = allStudents.filter(s => s.class_num === cls);
+      const classLimit = allLimits.find(l => l.target_type === 'class' && l.target_id === String(cls));
+      const classTimeRules = allTimeRestrictions.filter(r => r.target_type === 'class' && r.target_id === String(cls));
+      const studentTimeRules = allTimeRestrictions.filter(r => r.target_type === 'student' && students.some(s => s.student_id === r.target_id));
+
+      // Today KST
+      const now = new Date();
+      const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      const today = kst.toISOString().split('T')[0];
+
+      const content = document.getElementById('classContent');
+      content.innerHTML = `
+        <!-- 통계 -->
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="num">${students.length}</div>
+            <div class="label">학생 수</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${students.filter(s => s.has_password).length}</div>
+            <div class="label">가입 완료</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${classTimeRules.filter(r => r.date === today).length}</div>
+            <div class="label">오늘 시간 블록</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${(() => {
+              const todayBlock = classTimeRules.find(r => r.date === today && r.max_sessions);
+              return todayBlock ? todayBlock.max_sessions + '회' : '무제한';
+            })()}</div>
+            <div class="label">오늘 세션 제한</div>
+          </div>
+        </div>
+
+        <!-- 시간 블록 설정 -->
+        <div class="card">
+          <h3>${cls}반 시간 블록 설정</h3>
+
+          <h4>시간 블록 설정 (KST)</h4>
+          <p style="color:#888; font-size:0.8rem; margin-bottom:8px;">시간 블록 추가 시 최대 세션 수를 함께 설정합니다. 블록이 없으면 자유 이용(무제한).</p>
+          <div class="form-row" style="flex-wrap:wrap; gap:6px;">
+            <div class="form-group">
+              <label>날짜</label>
+              <input type="date" id="trDate_${cls}" value="${today}">
+            </div>
+            <div class="form-group">
+              <label>시작</label>
+              <input type="time" id="trStart_${cls}">
+            </div>
+            <div class="form-group">
+              <label>종료</label>
+              <input type="time" id="trEnd_${cls}">
+            </div>
+            <div class="form-group">
+              <label>최대 세션 수</label>
+              <input type="number" id="trMaxSessions_${cls}" min="1" placeholder="무제한" style="width:90px;" title="이 시간 블록에서 학생당 최대 세션 수">
+            </div>
+            <button class="btn" onclick="addClassTimeRule(${cls})">추가</button>
+          </div>
+
+          ${classTimeRules.length > 0 ? `
+          <table>
+            <thead><tr><th>날짜</th><th>시간</th><th>최대 세션</th><th>액션</th></tr></thead>
+            <tbody>
+              ${classTimeRules.map(r => `
+                <tr>
+                  <td>${r.date}</td>
+                  <td>${r.start_time} ~ ${r.end_time}</td>
+                  <td>${r.max_sessions ? r.max_sessions + '회' : '무제한'}</td>
+                  <td><button class="btn btn-sm btn-danger" onclick="deleteTimeRule(${r.id})">삭제</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>` : '<p class="empty-msg">시간 블록이 없습니다. (제한 없이 자유 이용)</p>'}
+        </div>
+
+        <!-- 학생 목록 -->
+        <div class="card">
+          <h3>${cls}반 학생 목록</h3>
+          <table>
+            <thead><tr><th>학번</th><th>번호</th><th>가입</th><th>세션 사용</th><th>개별 세션 제한</th><th>액션</th></tr></thead>
+            <tbody>
+              ${students.map(s => {
+                const indivLimit = allLimits.find(l => l.target_type === 'student' && l.target_id === s.student_id);
+                return `
+                <tr>
+                  <td>${s.student_id}</td>
+                  <td>${s.student_num}번</td>
+                  <td>${s.has_password ? '<span class="badge badge-green">O</span>' : '<span class="badge badge-blue">X</span>'}</td>
+                  <td>${s.sessionCount}${s.maxSessions < 999 ? '/' + s.maxSessions : ''}회</td>
+                  <td>${indivLimit ? indivLimit.max_sessions + '회' : '-'}</td>
+                  <td>
+                    ${s.has_password ? `<button class="btn btn-sm btn-danger" onclick="resetPassword('${s.student_id}')">PW초기화</button>` : ''}
+                    <button class="btn btn-sm" onclick="setIndividualLimit('${s.student_id}', ${s.maxSessions})">개별제한</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // ── Session Limit Actions ─────────────────────────────
+    async function saveClassLimit(cls) {
+      const max = parseInt(document.getElementById(`classLimitInput_${cls}`).value);
+      if (!max || max < 1) { alert('1 이상의 숫자를 입력해주세요.'); return; }
+      await fetch('/api/admin/session-limits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'class', targetId: String(cls), maxSessions: max })
+      });
+      await loadAll();
+      renderClassPanel();
+    }
+
+    async function deleteClassLimit(id) {
+      await fetch(`/api/admin/session-limits/${id}`, { method: 'DELETE' });
+      await loadAll();
+      renderClassPanel();
+    }
+
+    async function setIndividualLimit(studentId, current) {
+      const val = prompt(`${studentId} 학생의 개별 세션 제한 (빈칸=해제):`, current < 999 ? current : '');
+      if (val === null) return;
+      if (val === '') {
+        // Find and delete individual limit
+        const lim = allLimits.find(l => l.target_type === 'student' && l.target_id === studentId);
+        if (lim) await fetch(`/api/admin/session-limits/${lim.id}`, { method: 'DELETE' });
+      } else {
+        const num = parseInt(val);
+        if (!num || num < 1) { alert('유효한 숫자를 입력해주세요.'); return; }
+        await fetch('/api/admin/session-limits', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetType: 'student', targetId: studentId, maxSessions: num })
+        });
+      }
+      await loadAll();
+      renderClassPanel();
+    }
+
+    // ── Time Restriction Actions ──────────────────────────
+    async function addClassTimeRule(cls) {
+      const date = document.getElementById(`trDate_${cls}`).value;
+      const start = document.getElementById(`trStart_${cls}`).value;
+      const end = document.getElementById(`trEnd_${cls}`).value;
+      const maxSessions = document.getElementById(`trMaxSessions_${cls}`).value;
+      if (!date || !start || !end) { alert('날짜, 시작, 종료 시간을 모두 입력해주세요.'); return; }
+      await fetch('/api/admin/time-restrictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetType: 'class', targetId: String(cls),
+          sessionNumber: null, maxSessions: maxSessions || null,
+          date, startTime: start, endTime: end
+        })
+      });
+      await loadAll();
+      renderClassPanel();
+    }
+
+    async function deleteTimeRule(id) {
+      await fetch(`/api/admin/time-restrictions/${id}`, { method: 'DELETE' });
+      await loadAll();
+      renderClassPanel();
+    }
+
+    // ── Password Reset ────────────────────────────────────
+    async function resetPassword(studentId) {
+      if (!confirm(`${studentId} 학생의 비밀번호를 초기화하시겠습니까?`)) return;
+      try {
+        const res = await fetch('/api/admin/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId })
+        });
+        const data = await res.json();
+        if (data.error) { alert('초기화 실패: ' + data.error); return; }
+        alert(`${studentId} 비밀번호 초기화 완료`);
+        await loadAll();
+        renderClassPanel();
+      } catch (e) {
+        alert('초기화 중 오류 발생: ' + e.message);
+      }
+    }
+
+    // ── Submissions ───────────────────────────────────────
+    function renderSubmissions() {
+      const filtered = subSelectedClass
+        ? allSubmissions.filter(s => s.class_num === subSelectedClass)
+        : allSubmissions;
+
+      const body = document.getElementById('submissionsBody');
+      const empty = document.getElementById('subEmpty');
+
+      if (filtered.length === 0) {
+        body.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      body.innerHTML = filtered.map(s => `
+        <tr>
+          <td>${s.student_id}</td>
+          <td>${s.class_num}반</td>
+          <td>${s.problem_unit}</td>
+          <td>${s.problem_name}</td>
+          <td>${formatKST(s.submitted_at)}</td>
+          <td>
+            <button class="btn btn-sm" onclick="window.open('/api/admin/preview/${s.id}','_blank')">미리보기</button>
+            <button class="btn btn-sm btn-success" onclick="window.open('/api/admin/download/${s.id}','_blank')">다운로드</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ── Chat Logs ─────────────────────────────────────────
+    async function loadSessions() {
+      const studentId = document.getElementById('logStudentId').value.trim();
+      let url = '/api/admin/sessions?';
+      if (studentId) url += `studentId=${studentId}`;
+      else if (logSelectedClass) url += `classNum=${logSelectedClass}`;
+
+      const res = await fetch(url);
+      const sessions = await res.json();
+      const body = document.getElementById('sessionsBody');
+      const empty = document.getElementById('logEmpty');
+
+      if (sessions.length === 0) {
+        body.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      body.innerHTML = sessions.map(s => `
+        <tr>
+          <td>#${s.id}</td>
+          <td>${s.student_id || '-'}</td>
+          <td>${s.problem_unit}</td>
+          <td>${s.problem_name}</td>
+          <td>${formatKST(s.created_at)}</td>
+          <td><span class="badge ${s.status === 'active' ? 'badge-green' : 'badge-blue'}">${s.status}</span></td>
+          <td><button class="btn btn-sm" onclick="viewLog(${s.id})">로그</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function viewLog(sessionId) {
+      const res = await fetch(`/api/admin/logs/${sessionId}`);
+      const data = await res.json();
+      document.getElementById('logModalTitle').textContent =
+        `세션 #${sessionId} - ${data.session.problem_unit} ${data.session.problem_name}`;
+
+      document.getElementById('logModalContent').innerHTML = data.messages.map(m => {
+        let text = m.content;
+        try { const p = JSON.parse(text); if (Array.isArray(p)) text = p.map(x => x.type === 'text' ? x.text : '[이미지]').join(' '); } catch {}
+        return `<div class="log-message ${m.role}"><span class="role-tag">${m.role === 'user' ? '학생' : 'AI'}:</span>${escapeHtml(text)}</div>`;
+      }).join('');
+      document.getElementById('logModal').classList.add('show');
+    }
+
+    function closeLogModal() { document.getElementById('logModal').classList.remove('show'); }
+
+    // ── Helpers ───────────────────────────────────────────
+    function escapeHtml(text) {
+      const d = document.createElement('div'); d.textContent = text; return d.innerHTML;
+    }
+    function formatKST(dt) {
+      try { return new Date(dt + 'Z').toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }); }
+      catch { return dt; }
+    }
+
+    // ── Navigation ────────────────────────────────────────
+    function goStudentMode() { window.location.href = '/chat.html'; }
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/index.html';
+    }
+
+    // ── Start ─────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>
